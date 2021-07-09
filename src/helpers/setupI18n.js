@@ -45,6 +45,58 @@ export default state => {
     );
   };
 
+  const addQueryString = (url, params) => {
+    if (params && typeof params === 'object') {
+      let queryString = '';
+      // Must encode data
+      for (const paramName in params) {
+        queryString += '&' + encodeURIComponent(paramName) + '=' + encodeURIComponent(params[paramName]);
+      }
+      if (!queryString) {
+        return url;
+      }
+      url = url + (url.indexOf('?') !== -1 ? '&' : '?') + queryString.slice(1);
+    }
+    return url;
+  };
+
+  const requestWithXmlHttpRequest = (options, url, payload, callback) => {
+    if (payload && typeof payload === 'object') {
+      // if (!cache) payload._t = Date.now()
+      // URL encoded form payload must be in querystring format
+      payload = addQueryString('', payload).slice(1);
+    }
+  
+    try {
+      let x;
+      x = new XMLHttpRequest();
+      x.open('GET', url, 1);
+      if (!options.crossDomain) {
+        x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      }
+      x.withCredentials = !!options.withCredentials;
+      if (payload) {
+        x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      }
+      if (x.overrideMimeType) {
+        x.overrideMimeType('application/json');
+      }
+      let h = options.customHeaders;
+      h = typeof h === 'function' ? h() : h;
+      if (h) {
+        for (var i in h) {
+          x.setRequestHeader(i, h[i]);
+        }
+      }
+      x.onreadystatechange = () => {
+        x.readyState > 3 && callback(x.status >= 400 ? x.statusText : null, { status: x.status || 200, data: x.responseText }); // in android webview loading a file is status status 0
+      };
+      x.send(payload);
+    } catch (e) {
+      console && console.log(e);
+    }
+  };
+
   if (state.advanced.disableI18n) {
     i18next.init(options, callback);
   } else {
@@ -53,6 +105,7 @@ export default state => {
         ...options,
         backend: {
           loadPath: './i18n/{{ns}}-{{lng}}.json',
+          request: requestWithXmlHttpRequest
         },
       },
       callback,

@@ -91,7 +91,7 @@ export const getEnabledToolbarGroups = state => {
     const toolGroupButtons = headerItems.filter(({ dataElement }) => {
       return dataElement && dataElement.includes('ToolGroupButton');
     });
-    const isEveryToolGroupButtonDisabled  = !dataElement.includes('toolbarGroup-View') && toolGroupButtons.every(({ dataElement: toolGroupDataElement }) => {
+    const isEveryToolGroupButtonDisabled = !dataElement.includes('toolbarGroup-View') && toolGroupButtons.every(({ dataElement: toolGroupDataElement }) => {
       return isElementDisabled(state, toolGroupDataElement);
     });
     return !isElementDisabled(state, `${dataElement}`) && !isEveryToolGroupButtonDisabled;
@@ -212,6 +212,8 @@ export const getPageLabels = state => state.viewer.pageLabels;
 
 export const getSelectedThumbnailPageIndexes = state => state.viewer.selectedThumbnailPageIndexes;
 
+export const getShiftKeyThumbnailPivotIndex = state => state.viewer.shiftKeyThumbnailPivotIndex;
+
 export const getDisabledCustomPanelTabs = state =>
   state.viewer.customPanels.reduce((disabledTabs, { tab }) => {
     if (state.viewer.disabledElements[tab.dataElement]?.disabled) {
@@ -301,6 +303,11 @@ export const getWarningConfirmEvent = state => state.viewer.warning?.onConfirm;
 export const getWarningConfirmBtnText = state =>
   state.viewer.warning?.confirmBtnText;
 
+export const getWarningSecondaryEvent = state => state.viewer.warning?.onSecondary;
+
+export const getWarningSecondaryBtnText = state =>
+  state.viewer.warning?.secondaryBtnText;
+
 export const getWarningCancelEvent = state => state.viewer.warning?.onCancel;
 
 export const isAccessibleMode = state => state.viewer.isAccessibleMode;
@@ -355,3 +362,9 @@ export const isSnapModeEnabled = state => state.viewer.isSnapModeEnabled;
 export const getUnreadAnnotationIdSet = state => state.viewer.unreadAnnotationIdSet;
 
 export const getCurrentLanguage = state => state.viewer.currentLanguage;
+
+export const shouldFadePageNavigationComponent = state => state.viewer.fadePageNavigationComponent;
+
+export const pageDeletionConfirmationModalEnabled = state => state.viewer.pageDeletionConfirmationModalEnabled;
+
+export const isInDesktopOnlyMode = state => state.viewer.isInDesktopOnlyMode;

@@ -4,13 +4,13 @@ import localStorageManager from 'helpers/localStorageManager';
 import touchEventManager from 'helpers/TouchEventManager';
 import hotkeysManager, { Keys, concatKeys } from 'helpers/hotkeysManager';
 import Feature from 'constants/feature';
-import { PRIORITY_ONE } from 'constants/actionPriority';
+import { PRIORITY_TWO } from 'constants/actionPriority';
 import actions from 'actions';
 import enableTools from 'src/apis/enableTools';
 import disableTools from 'src/apis/disableTools';
 
-// a higher older function that creates the enableFeatures and disableFeatures APIs
-export default (enable, store) => features => {
+// a higher order function that creates the enableFeatures and disableFeatures APIs
+export default (enable, store) => (features, priority = PRIORITY_TWO) => {
   // map a feature to the dataElements that should be enabled/disabled and the function to run
   const map = {
     [Feature.Ribbons]: {
@@ -131,7 +131,7 @@ export default (enable, store) => features => {
           core.clearSelection();
           core.setToolMode('AnnotationEdit');
         }
-        window.Tools.Tool.ENABLE_TEXT_SELECTION = enable;
+        window.Core.Tools.Tool.ENABLE_TEXT_SELECTION = enable;
       },
     },
     [Feature.TouchScrollLock]: {
@@ -222,7 +222,20 @@ export default (enable, store) => features => {
       },
     },
     [Feature.MathSymbols]: {
-      dataElements: ['mathSymbolsButton'],
+      dataElements: ['mathSymbolsButton', 'richTextPopup'],
+    },
+    [Feature.OutlineEditing]: {
+      dataElements: [
+        'outlineControls',
+        'addNewOutlineButtonContainer',
+        'addNewOutlineButton',
+        'outlineReorderButtonGroup',
+        'outlineControls',
+        'editOutlineButton',
+        'outlineEditPopup',
+        'renameOutlineButton',
+        'deleteOutlineButton',
+      ],
     },
     [Feature.OutlineEditing]: {
       dataElements: [
@@ -244,12 +257,12 @@ export default (enable, store) => features => {
   }
 
   features.forEach(feature => {
-    const { dataElements = [], fn = () => {} } = map[feature];
+    const { dataElements = [], fn = () => { } } = map[feature];
 
     if (enable) {
-      store.dispatch(actions.enableElements(dataElements, PRIORITY_ONE));
+      store.dispatch(actions.enableElements(dataElements, priority));
     } else {
-      store.dispatch(actions.disableElements(dataElements, PRIORITY_ONE));
+      store.dispatch(actions.disableElements(dataElements, priority));
     }
 
     fn();

@@ -5,23 +5,20 @@ import { useSelector, useDispatch } from 'react-redux';
 import { DragSource, DropTarget } from 'react-dnd';
 import { useTranslation } from 'react-i18next';
 import { ItemTypes, DropLocation, BUFFER_ROOM } from 'constants/dnd';
+import Events from 'constants/events';
 import fireEvent from 'helpers/fireEvent';
-
 import OutlineContext from './Context';
 import Icon from 'components/Icon';
 import Button from 'components/Button';
 import DataElementWrapper from 'components/DataElementWrapper';
 import OutlineEditPopup from 'components/OutlineEditPopup';
 import OutlineTextInput from 'components/OutlineTextInput';
-
 import core from 'core';
 import outlineUtils from 'helpers/OutlineUtils';
 import { isMobile, isIE } from 'helpers/device';
 import actions from 'actions';
 import selectors from 'selectors';
-
 import './Outline.scss';
-
 const propTypes = {
   outline: PropTypes.object.isRequired,
   moveOutlineInward: PropTypes.func.isRequired,
@@ -31,7 +28,7 @@ const propTypes = {
   connectDropTarget: PropTypes.func,
   isDragging: PropTypes.bool,
   isDraggedUpwards: PropTypes.bool,
-  isDraggedDownwards: PropTypes.bool
+  isDraggedDownwards: PropTypes.bool,
 };
 
 const Outline = forwardRef(
@@ -81,8 +78,8 @@ const Outline = forwardRef(
 
       if (
         selectedOutlinePath !== null &&
-        selectedOutlinePath !== path &&
-        selectedOutlinePath.startsWith(path)
+      selectedOutlinePath !== path &&
+      selectedOutlinePath.startsWith(path)
       ) {
         setIsExpanded(true);
       }
@@ -96,6 +93,12 @@ const Outline = forwardRef(
       setIsExpanded(expand => !expand);
     }, []);
 
+    const handleArrowKeyPress = useCallback(function(event) {
+      if (event.key === 'Enter') {
+        handleClickExpand();
+      }
+    });
+
     const handleOutlineClick = useCallback(
       function() {
         core.goToOutline(outline);
@@ -107,7 +110,11 @@ const Outline = forwardRef(
       },
       [dispatch, setSelectedOutlinePath, outline],
     );
-
+    const handleOutlineKeyPress = event => {
+      if (event.key === 'Enter') {
+        handleOutlineClick();
+      }
+    }
     function handleOutlineDoubleClick() {
       if (!core.isFullPDFEnabled()) {
         return;
@@ -142,7 +149,9 @@ const Outline = forwardRef(
                 arrow: true,
                 expanded: isExpanded,
               })}
-              onClick={handleClickExpand}
+            tabIndex={0}
+            onClick={handleClickExpand}
+            onKeyPress={handleArrowKeyPress}
             >
               <Icon glyph="ic_chevron_right_black_24px" />
             </div>
@@ -158,12 +167,13 @@ const Outline = forwardRef(
               onBlur={changeOutlineName}
             />
           ) : (
-            <div className={classNames({ row: true, selected: isSelected, hover: showHoverBackground && !isSelected })} ref={elementRef}>
+            <div className={classNames({ row: true, selected: isSelected, hover: showHoverBackground && !isSelected })} ref={elementRef} onKeyPress={handleOutlineKeyPress} tabIndex={0}>
               <Button
                 className="contentButton"
                 onDoubleClick={handleOutlineDoubleClick}
                 label={outline.getName()}
                 onClick={handleOutlineClick}
+                tabIndex={-1}
               />
               <OutlineEditButton
                 outline={outline}
@@ -201,7 +211,6 @@ Outline.propTypes = propTypes;
 
 function OutlineEditButton({ outline, setIsEditingName, onPopupOpen, onPopupClose }) {
   const [isOpen, setIsOpen] = useState(false);
-
   useEffect(() => {
     if (isOpen) {
       onPopupOpen();
@@ -209,16 +218,13 @@ function OutlineEditButton({ outline, setIsEditingName, onPopupOpen, onPopupClos
       onPopupClose();
     }
   }, [isOpen, onPopupOpen, onPopupClose]);
-
   function handleButtonClick() {
     setIsOpen(open => !open);
   }
-
   const trigger = `edit-button-${outlineUtils.getPath(outline)}`;
-
   return (
     <DataElementWrapper className="editOutlineButton" dataElement="editOutlineButton">
-      <Button dataElement={trigger} img="icon-tool-more" onClick={handleButtonClick} />
+      <Button dataElement={trigger} img="icon-tool-more" onClick={handleButtonClick} tabIndex={-1}/>
       {isOpen && (
         <OutlineEditPopup
           outline={outline}
@@ -230,7 +236,6 @@ function OutlineEditButton({ outline, setIsEditingName, onPopupOpen, onPopupClos
     </DataElementWrapper>
   );
 }
-
 OutlineEditButton.propTypes = {
   outline: PropTypes.object.isRequired,
   setIsEditingName: PropTypes.func.isRequired,
@@ -291,7 +296,7 @@ const DropOutine = DropTarget(ItemTypes.OUTLINE, {
         node.style.backgroundColor = 'transparent';
         break;
     }
-    fireEvent('onDraggingItem',
+    fireEvent(Events.DRAG_OUTLINE,
       {
         targetOutline: props.outline,
         draggedOutline: dragSourceState.getItem().outline,
@@ -316,7 +321,7 @@ const DropOutine = DropTarget(ItemTypes.OUTLINE, {
         break;
     }
     dragSourceState.getItem().node.style.backgroundColor = 'transparent';
-    fireEvent('onDropItem',
+    fireEvent(Events.DROP_OUTLINE,
       {
         targetOutline: outline,
         draggedOutline: dragSourceState.getItem().outline,

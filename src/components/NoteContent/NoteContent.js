@@ -18,13 +18,13 @@ import NotePopup from 'components/NotePopup';
 import NoteState from 'components/NoteState';
 import NoteContext from 'components/Note/Context';
 import Icon from 'components/Icon';
-import NoteUnpostedCommentIndicator from 'components/NoteUnpostedCommentIndicator'
+import NoteUnpostedCommentIndicator from 'components/NoteUnpostedCommentIndicator';
 
 import core from 'core';
 import mentionsManager from 'helpers/MentionsManager';
 import { mapAnnotationToKey, getDataWithKey } from 'constants/map';
 import escapeHtml from 'helpers/escapeHtml';
-import getFillColor from 'helpers/getFillColor';
+import getColor from 'helpers/getColor';
 import getLatestActivityDate from 'helpers/getLatestActivityDate';
 import useDidUpdate from 'hooks/useDidUpdate';
 import actions from 'actions';
@@ -73,7 +73,8 @@ const NoteContent = ({ annotation, isEditing, setIsEditing, noteIndex, onTextCha
 
   const renderAuthorName = useCallback(
     annotation => {
-      const name = core.getDisplayAuthor(annotation);
+      const name = core.getDisplayAuthor(annotation['Author']);
+
       return name ? (
         highlightSearchInput(name, searchInput)
       ) : (
@@ -89,11 +90,11 @@ const NoteContent = ({ annotation, isEditing, setIsEditing, noteIndex, onTextCha
       Autolinker.link(contents, {
         stripPrefix: false,
         stripTrailingSlash: false,
-        replaceFn : function(match) {
+        replaceFn(match) {
           const href = match.getAnchorHref();
           const anchorText = match.getAnchorText();
           const offset = match.getOffset();
-          switch(match.getType()) {
+          switch (match.getType()) {
             case 'url':
             case 'email':
             case 'phone':
@@ -157,8 +158,14 @@ const NoteContent = ({ annotation, isEditing, setIsEditing, noteIndex, onTextCha
 
   const icon = getDataWithKey(mapAnnotationToKey(annotation)).icon;
   const color = annotation[iconColor]?.toHexString?.();
-  const fillColor = getFillColor(annotation.FillColor);
-  const contents = annotation.getCustomData('trn-mention')?.contents || annotation.getContents();
+  const fillColor = getColor(annotation.FillColor);
+  let customData;
+  try {
+    customData = JSON.parse(annotation.getCustomData('trn-mention'));
+  } catch (e) {
+    customData = annotation.getCustomData('trn-mention');
+  }
+  const contents = customData?.contents || annotation.getContents();
   const contentsToRender = annotation.getContents();
   const numberOfReplies = annotation.getReplies().length;
   const formatNumberOfReplies = Math.min(numberOfReplies, 9);
@@ -182,7 +189,7 @@ const NoteContent = ({ annotation, isEditing, setIsEditing, noteIndex, onTextCha
     }
   };
 
-  const handleContentsClicked = (e) => {
+  const handleContentsClicked = e => {
     if (window.getSelection()?.toString()) {
       e?.stopPropagation();
       return;
@@ -313,10 +320,10 @@ const ContentArea = ({
     if (isMentionEnabled) {
       const { plainTextValue, ids } = mentionsManager.extractMentionDataFromStr(textAreaValue);
 
-      annotation.setCustomData('trn-mention', {
+      annotation.setCustomData('trn-mention', JSON.stringify({
         contents: textAreaValue,
         ids,
-      });
+      }));
       core.setNoteContents(annotation, plainTextValue);
     } else {
       core.setNoteContents(annotation, textAreaValue);
@@ -397,7 +404,7 @@ const highlightSearchInput = (text, searchInput) => {
       if (lastFoundInstance !== -1) {
         allFoundPositions.push(lastFoundInstance);
       }
-    };
+    }
   }
   allFoundPositions.forEach((position, idx) => {
     // Account for any content at the beginning of the string before the first

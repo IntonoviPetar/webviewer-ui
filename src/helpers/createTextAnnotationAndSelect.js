@@ -21,7 +21,7 @@ const createTextAnnotation = annotationConstructor => {
     pageNumber = parseInt(pageNumber, 10);
     const annotation = createAnnotation(annotationConstructor, pageNumber, quads);
 
-    if (window.Tools.TextAnnotationCreateTool.AUTO_SET_TEXT && !(annotation instanceof window.Annotations.RedactionAnnotation)) {
+    if (window.Core.Tools.TextAnnotationCreateTool.AUTO_SET_TEXT && !(annotation instanceof window.Annotations.RedactionAnnotation)) {
       annotation.setContents(core.getSelectedText(pageNumber));
     }
 
@@ -29,7 +29,7 @@ const createTextAnnotation = annotationConstructor => {
       setRedactionStyle(annotation);
     }
 
-    setAnnotationColor(annotation);
+    setAnnotationStyle(annotation);
 
     annotations.push(annotation);
   });
@@ -46,12 +46,14 @@ const createAnnotation = (annotationConstructor, pageNumber, quads) => {
   return annotation;
 };
 
-const setAnnotationColor = annotation => {
+const setAnnotationStyle = annotation => {
   const toolName = mapAnnotationToToolName(annotation);
 
   if (toolName) {
-    const { StrokeColor } = getToolStyles(toolName);
-    annotation.StrokeColor = StrokeColor;
+    const newStyles = getToolStyles(toolName);
+    Object.keys(newStyles).forEach(property => {
+      annotation[property] = newStyles[property];
+    });
   }
 };
 

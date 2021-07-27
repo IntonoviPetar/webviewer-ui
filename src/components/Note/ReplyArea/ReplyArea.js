@@ -46,7 +46,6 @@ const ReplyArea = ({ annotation, isUnread, onPendingReplyChange }) => {
     if (!isFocused) {
       dispatch(actions.finishNoteEditing());
     }
-
   }, [isFocused]);
 
   useEffect(() => {
@@ -83,7 +82,7 @@ const ReplyArea = ({ annotation, isUnread, onPendingReplyChange }) => {
   const postReply = e => {
     // prevent the textarea from blurring out
     e.preventDefault();
-    const replyText = pendingReplyMap[annotation.Id]
+    const replyText = pendingReplyMap[annotation.Id];
 
     if (!replyText) {
       return;
@@ -94,10 +93,10 @@ const ReplyArea = ({ annotation, isUnread, onPendingReplyChange }) => {
       if (annotationHasNoContents && isContentEditable) {
         const { plainTextValue, ids } = mentionsManager.extractMentionDataFromStr(replyText);
 
-        annotation.setCustomData('trn-mention', {
+        annotation.setCustomData('trn-mention', JSON.stringify({
           contents: replyText,
           ids,
-        });
+        }));
         core.setNoteContents(annotation, plainTextValue);
       } else {
         mentionsManager.createMentionReply(annotation, replyText);
@@ -123,10 +122,10 @@ const ReplyArea = ({ annotation, isUnread, onPendingReplyChange }) => {
     unread: isUnread,
   });
 
-  const handleNoteTextareaChange = (value) => {
+  const handleNoteTextareaChange = value => {
     setPendingReply(value, annotation.Id);
     onPendingReplyChange();
-  }
+  };
   return ifReplyNotAllowed ? null : (
     <div
       className={replyAreaClass}
@@ -146,14 +145,12 @@ const ReplyArea = ({ annotation, isUnread, onPendingReplyChange }) => {
         placeholder={`${t('action.reply')}...`}
         aria-label={`${t('action.reply')}...`}
       />
-      <div className="reply-button-container">
-        <button className={`reply-button${!pendingReplyMap[annotation.Id] ? ' disabled' : ''}`}
-          disabled={!pendingReplyMap[annotation.Id]}
-          onMouseUp={e => postReply(e)}
-        >
-          {t('action.post')}
-        </button>
-      </div>
+      <button className={`reply-button${!pendingReplyMap[annotation.Id] ? ' disabled' : ''}`}
+        disabled={!pendingReplyMap[annotation.Id]}
+        onMouseUp={e => postReply(e)}
+      >
+        {t('action.post')}
+      </button>
     </div>
   );
 };

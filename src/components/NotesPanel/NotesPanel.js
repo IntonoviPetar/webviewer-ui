@@ -14,10 +14,11 @@ import Button from 'components/Button';
 
 import core from 'core';
 import { getSortStrategies } from 'constants/sortStrategies';
+import Events from 'constants/events';
 import actions from 'actions';
 import selectors from 'selectors';
 import useMedia from 'hooks/useMedia';
-import { isIE } from "helpers/device";
+import { isIE } from 'helpers/device';
 
 import './NotesPanel.scss';
 
@@ -32,6 +33,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
     notesInLeftPanel,
     isDocumentReadOnly,
     enableNotesPanelVirtualizedList,
+    isInDesktopOnlyMode
   ] = useSelector(
     state => [
       selectors.getSortStrategy(state),
@@ -43,6 +45,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       selectors.getNotesInLeftPanel(state),
       selectors.isDocumentReadOnly(state),
       selectors.getEnableNotesPanelVirtualizedList(state),
+      selectors.isInDesktopOnlyMode(state)
     ],
     shallowEqual,
   );
@@ -60,6 +63,8 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
   );
 
   const [notes, setNotes] = useState([]);
+
+  const [filterEnabled, setFilterEnabled] = useState(false);
 
   // the object will be in a shape of { [note.Id]: true }
   // use a map here instead of an array to achieve an O(1) time complexity for checking if a note is selected
@@ -89,13 +94,23 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       setNotes(
         core
           .getAnnotationsList()
-          .filter(annot => annot.Listable && !annot.isReply() && !annot.Hidden && !annot.isGrouped()),
+          .filter(annot => annot.Listable && !annot.isReply() && !annot.Hidden && !annot.isGrouped() && annot.ToolName !== window.Core.Tools.ToolNames.CROP),
       );
     };
+
+    const toggleFilterStyle = (e) => {
+      const { types, authors, colors, statuses } = e.detail;
+      if (types.length > 0 || authors.length > 0 || colors.length > 0 || statuses.length > 0) {
+        setFilterEnabled(true);
+      } else {
+        setFilterEnabled(false);
+      }
+    }
 
     core.addEventListener('annotationChanged', _setNotes);
     core.addEventListener('annotationHidden', _setNotes);
     core.addEventListener('updateAnnotationPermission', _setNotes);
+    window.addEventListener(Events.ANNOTATION_FILTER_CHANGED, toggleFilterStyle);
 
     _setNotes();
 
@@ -103,6 +118,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       core.removeEventListener('annotationChanged', _setNotes);
       core.removeEventListener('annotationHidden', _setNotes);
       core.removeEventListener('updateAnnotationPermission', _setNotes);
+      window.removeEventListener(Events.ANNOTATION_FILTER_CHANGED, toggleFilterStyle);
     };
   }, []);
 
@@ -125,14 +141,6 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
   }, [isOpen]);
 
   let singleSelectedNoteIndex = -1;
-  useEffect(() => {
-    if (Object.keys(selectedNoteIds).length && singleSelectedNoteIndex !== -1) {
-      listRef.current?.scrollToRow(singleSelectedNoteIndex);
-    }
-    // For newly created annotations the "annotationSelected" event fires before the "annotationChanged" event
-    // So "singleSelectedNoteIndex" will be -1 till "notes" are updated
-    // eslint-disable-next-line
-  }, [selectedNoteIds, notes]);
 
   // useEffect(() => {
   //   if (isOpen) {
@@ -149,7 +157,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
 
   const filterNotesWithSearch = note => {
     const content = note.getContents();
-    const authorName = core.getDisplayAuthor(note);
+    const authorName = core.getDisplayAuthor(note['Author']);
 
     // didn't use regex here because the search input may form an invalid regex, e.g. *
     return (
@@ -157,7 +165,6 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       authorName?.toLowerCase().includes(searchInput.toLowerCase())
     );
   };
-
   const filterNote = note => {
     let shouldRender = true;
 
@@ -168,20 +175,27 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
     if (searchInput) {
       const replies = note.getReplies();
       // reply is also a kind of annotation
-      // https://www.pdftron.com/api/web/CoreControls.AnnotationManager.html#createAnnotationReply__anchor
+      // https://www.pdftron.com/api/web/Core.AnnotationManager.html#createAnnotationReply__anchor
       const noteAndReplies = [note, ...replies];
 
       shouldRender =
         shouldRender &&
         noteAndReplies.some(filterNotesWithSearch);
     }
-
     return shouldRender;
   };
 
-  const notesToRender = getSortStrategies()
-  [sortStrategy].getSortedNotes(notes)
-  .filter(filterNote);
+  const notesToRender = getSortStrategies()[sortStrategy].getSortedNotes(notes)
+    .filter(filterNote);
+
+  useEffect(() => {
+    if (Object.keys(selectedNoteIds).length && singleSelectedNoteIndex !== -1) {
+      setTimeout(() => {
+        // wait for the previous selected annotation to resize() after closing before scrolling to the newly selected one
+        listRef.current?.scrollToRow(singleSelectedNoteIndex);
+      }, 0);
+    }
+  }, [selectedNoteIds]);
 
   //expand a reply note when search content is match
   const onlyReplyContainsSearchInput = currNote => {
@@ -192,7 +206,6 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       return note.getReplies().some(filterNotesWithSearch);
     }).some(replies => replies.Id === currNote.Id);
   };
-  
   const handleInputChange = e => {
     _handleInputChange(e.target.value);
   };
@@ -311,7 +324,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
       <div>
         <Icon className="empty-icon" glyph="illustration - empty state - outlines" />
       </div>
-      <div className="msg">{t('message.noAnnotations')}</div>
+      <div className="msg">{isDocumentReadOnly ? t('message.noAnnotationsReadOnly') : t('message.noAnnotations')}</div>
     </div>
   );
 
@@ -331,7 +344,7 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
   }
 
   let style = {};
-  if (!isMobile) {
+  if ((isInDesktopOnlyMode || !isMobile)) {
     style = { width: `${currentWidth}px`, minWidth: `${currentWidth}px` };
   }
 
@@ -339,12 +352,13 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
     <div
       className={classNames({
         Panel: true,
-        NotesPanel: true,
+        NotesPanel: true
       })}
       style={style}
       data-element="notesPanel"
+      onMouseUp={() => core.deselectAllAnnotations}
     >
-      {isMobile && !notesInLeftPanel &&
+      {(!isInDesktopOnlyMode && isMobile) && !notesInLeftPanel &&
         <div
           className="close-container"
         >
@@ -376,7 +390,10 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
           <div className="sort-row">
             <Button
               dataElement="filterAnnotationButton"
-              className="filter-annotation-button"
+              className={classNames({
+                filterAnnotationButton: true,
+                active: filterEnabled
+              })}
               disabled={notes.length === 0}
               label={t('component.filter')}
               onClick={() => dispatch(actions.openElement('filterModal'))}
@@ -409,14 +426,14 @@ const NotesPanel = ({ currentLeftPanelWidth }) => {
           <VirtualizedList
             ref={listRef}
             notes={notesToRender}
+            sortStrategy={sortStrategy}
             onScroll={handleScroll}
             initialScrollTop={scrollTopRef.current}
             selectedIndex={singleSelectedNoteIndex}
-            scrollToSelectedAnnot={scrollToSelectedAnnot}
           >
             {renderChild}
           </VirtualizedList>
-          )}
+        )}
       </React.Fragment>
     </div>
   ));

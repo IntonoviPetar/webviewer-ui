@@ -169,8 +169,7 @@ export default initialState => (state = initialState, action) => {
     case 'SET_CUSTOM_COLORS':
       if (localStorageManager.isLocalStorageEnabled()) {
         window.localStorage.setItem('customColors', JSON.stringify(payload.customColors));
-      }
-      else {
+      } else {
         console.error("localStorage is disabled, customColors cannot be restored");
       }
       return { ...state, customColors: payload.customColors };
@@ -295,6 +294,8 @@ export default initialState => (state = initialState, action) => {
       return { ...state, pageLabels: [...payload.pageLabels] };
     case 'SET_SELECTED_THUMBNAIL_PAGE_INDEXES':
       return { ...state, selectedThumbnailPageIndexes: payload.selectedThumbnailPageIndexes };
+    case 'SET_SHIFT_KEY_THUMBNAIL_PIVOT_INDEX':
+      return { ...state, shiftKeyThumbnailPivotIndex: payload.shiftKeyThumbnailPivotIndex };
     case 'SET_ACTIVE_PALETTE': {
       const { colorMapKey, colorPalette } = payload;
       return {
@@ -357,7 +358,7 @@ export default initialState => (state = initialState, action) => {
     case 'SET_ANNOTATION_CONTENT_OVERLAY_HANDLER':
       return { ...state, annotationContentOverlayHandler: payload.annotationContentOverlayHandler };
     case 'SET_CUSTOM_MODAL': {
-      const existingDataElementFiltered = state.customModals.filter(function(modal) {
+      const existingDataElementFiltered = state.customModals.filter(function (modal) {
         return modal.dataElement !== payload.dataElement;
       });
       return {
@@ -375,7 +376,7 @@ export default initialState => (state = initialState, action) => {
       return {
         ...state,
         validationModalWidgetName: payload.validationModalWidgetName,
-      }
+      };
     case 'ADD_TRUSTED_CERTIFICATES':
       /**
        * To mimic the behavior of the Core implementation, where certificates
@@ -396,14 +397,29 @@ export default initialState => (state = initialState, action) => {
     case 'SET_ANNOTATION_READ_STATE':
       const { unreadAnnotationIdSet } = state;
       const { annotationId, isRead } = payload;
-      if (isRead){
-        unreadAnnotationIdSet.delete(annotationId);   
+      if (isRead) {
+        unreadAnnotationIdSet.delete(annotationId);
       } else {
-        unreadAnnotationIdSet.add(annotationId);   
+        unreadAnnotationIdSet.add(annotationId);
       }
       return { ...state, unreadAnnotationIdSet: new Set(unreadAnnotationIdSet) };
     case 'SET_LANGUAGE':
       return { ...state, currentLanguage: payload.language };
+    case 'SET_FADE_PAGE_NAVIGATION_COMPONENT':
+      return {
+        ...state,
+        fadePageNavigationComponent: payload.fadePageNavigationComponent
+      };
+    case 'SET_ENABLE_DESKTOP_ONLY_MODE':
+      return {
+        ...state,
+        isInDesktopOnlyMode: payload.enableDesktopOnlyMode
+      };
+    case 'PAGE_DELETION_CONFIRMATION_MODAL_POPUP':
+      return {
+        ...state,
+        pageDeletionConfirmationModalEnabled : payload.pageDeletionConfirmationModalEnabled
+      };
     default:
       return state;
   }

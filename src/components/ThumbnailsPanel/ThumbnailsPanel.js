@@ -1,3 +1,4 @@
+import { debounce } from 'lodash';
 import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import { List } from 'react-virtualized';
@@ -71,6 +72,12 @@ const ThumbnailsPanel = () => {
 
   const dispatch = useDispatch();
 
+  // If memory becomes an issue, change this to use pageNumbers.
+  // Instead of a debounced drawAnnotations function, perhaps use
+  // a function that first checks for the pageNumber in this map
+  // before calling drawAnnotations on a page.
+  let activeThumbRenders = {};
+
   const getThumbnailSize = (pageWidth, pageHeight) => {
     let width;
     let height;
@@ -115,7 +122,7 @@ const ThumbnailsPanel = () => {
     if (rotation < 0) {
       rotation += 4;
     }
-    const multiplier = window.utils.getCanvasMultiplier();
+    const multiplier = window.Core.getCanvasMultiplier();
 
     if (rotation % 2 === 0) {
       annotCanvas.width = width;
@@ -151,7 +158,11 @@ const ThumbnailsPanel = () => {
       return;
     }
 
-    core.drawAnnotations(options);
+    if (!activeThumbRenders[pageNumber]) {
+      activeThumbRenders[pageNumber] = debounce(core.drawAnnotations, 112);
+    }
+    const debouncedDraw = activeThumbRenders[pageNumber];
+    debouncedDraw(options);
   };
 
   useEffect(() => {
@@ -167,12 +178,12 @@ const ThumbnailsPanel = () => {
 
     const onDocumentLoaded = () => {
       const doc = core.getDocument();
-      if (doc.type === workerTypes.PDF || (doc.type === workerTypes.BLACKBOX && !doc.isWebViewerServerDocument())) {
+      if (doc.type === workerTypes.PDF || (doc.type === workerTypes.WEBVIEWER_SERVER && !doc.isWebViewerServerDocument())) {
         setAllowPageOperations(true);
       } else {
         setAllowPageOperations(false);
       }
-
+      activeThumbRenders = {};
       dispatch(actions.setSelectedPageThumbnails([]));
     };
 
@@ -338,7 +349,9 @@ const ThumbnailsPanel = () => {
       if (externalPageWebViewerFrameId && window.frameElement.id !== externalPageWebViewerFrameId) {
         dispatch(mergeExternalWebViewerDocument(externalPageWebViewerFrameId, insertTo));
       } else if (files.length) {
-        dispatch(mergeDocument(files[0], insertTo));
+        files.forEach(file => {
+          dispatch(mergeDocument(file, insertTo));
+        });
       }
     } else if (isThumbnailReorderingEnabled && !mergingDocument) {
       if (draggingOverPageIndex !== null) {

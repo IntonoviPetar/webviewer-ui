@@ -29,7 +29,7 @@ export default (dispatch, src, options = {}) => {
 const getDefaultOptions = () => ({
   startOffline: getHashParams('startOffline', false),
   azureWorkaround: getHashParams('azureWorkaround', false),
-  pdftronServer: getHashParams('pdftronServer', ''),
+  webviewerServerURL: getHashParams('webviewerServerURL', ''),
   fallbackToClientSide: getHashParams('fallbackToClientSide', false),
   singleServerMode: getHashParams('singleServerMode', false),
   forceClientSideInit: getHashParams('forceClientSideInit', false),
@@ -73,7 +73,7 @@ const extractXodOptions = options => {
   const xodOptions = options.xodOptions || {};
 
   if (options.decryptOptions) {
-    xodOptions.decrypt = window.CoreControls.Encryption.decrypt;
+    xodOptions.decrypt = window.Core.Encryption.decrypt;
     xodOptions.decryptOptions = options.decryptOptions;
   }
 

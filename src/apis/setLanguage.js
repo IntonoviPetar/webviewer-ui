@@ -1,11 +1,11 @@
 /**
  * Set the language of WebViewer UI.
- * @method WebViewerInstance#setLanguage
+ * @method UI.setLanguage
  * @param {string} language The language WebViewer UI will use. By default, following languages are supported: en, zh_cn, fr.
  * @example
 WebViewer(...)
   .then(function(instance) {
-    instance.setLanguage('fr'); // set the language to French
+    instance.UI.setLanguage('fr'); // set the language to French
   });
  */
 

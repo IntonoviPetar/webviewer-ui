@@ -46,20 +46,20 @@ import actions from 'actions';
  * Invalid.
  * @ignore
  */
-export default async(certificates, sigWidgets, dispatch) => {
+export default async (certificates, sigWidgets, dispatch) => {
   const doc = core.getDocument();
   if (doc) {
     const verificationResult = await getVerificationResult(doc, sigWidgets, certificates);
     dispatch(actions.setVerificationResult(verificationResult));
   } else {
-    window.docViewer.one('documentLoaded', async() => {
+    window.documentViewer.addEventListener('documentLoaded', async () => {
       const verificationResult = await getVerificationResult(
         core.getDocument(),
         sigWidgets,
         certificates
       );
       dispatch(actions.setVerificationResult(verificationResult));
-    });
+    }, { 'once': true });
   }
 };
 
@@ -67,7 +67,7 @@ export default async(certificates, sigWidgets, dispatch) => {
  * Iterates through each signature widget in the document, retrieves and returns
  * all pertinent information pertaining to Digital Signature Verification
  *
- * @param {CoreControls.Document} doc The document with signatures to verify
+ * @param {Core.Document} doc The document with signatures to verify
  * with the given certificate
  * @param {Array<Annotations.SignatureWidgetAnnotation>} sigWidgets An array of
  * signature widgets to verify with the given certificate
@@ -79,7 +79,7 @@ export default async(certificates, sigWidgets, dispatch) => {
  * to their verification results
  * @ignore
  */
-const getVerificationResult = async(doc, sigWidgets, certificates) => {
+const getVerificationResult = async (doc, sigWidgets, certificates) => {
   const { PDFNet } = window;
   const { VerificationResult } = PDFNet;
   const {
@@ -90,7 +90,7 @@ const getVerificationResult = async(doc, sigWidgets, certificates) => {
   } = VerificationResult;
   const verificationResults = {};
 
-  await PDFNet.runWithCleanup(async() => {
+  await PDFNet.runWithCleanup(async () => {
     /**
      * @todo Remove re-assignment of argument from original code?
      */

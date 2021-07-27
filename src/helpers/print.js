@@ -16,7 +16,7 @@ let colorMap;
 
 dayjs.extend(LocalizedFormat);
 
-export const print = async(dispatch, isEmbedPrintSupported, sortStrategy, colorMap, options = {}) => {
+export const print = async (dispatch, isEmbedPrintSupported, sortStrategy, colorMap, options = {}) => {
   const {
     includeAnnotations,
     includeComments,
@@ -299,19 +299,19 @@ const positionCanvas = (canvas, pageIndex) => {
     switch (documentRotation) {
       case 0:
         ctx.translate(height, 0);
-        ctx.rotate(( 90 * Math.PI) / 180);
+        ctx.rotate((90 * Math.PI) / 180);
         break;
       case 1:
         ctx.translate(0, height);
-        ctx.rotate(( 270 * Math.PI) / 180);
+        ctx.rotate((270 * Math.PI) / 180);
         break;
       case 2:
         ctx.translate(height, 0);
-        ctx.rotate(( -270 * Math.PI) / 180);
+        ctx.rotate((-270 * Math.PI) / 180);
         break;
       case 3:
         ctx.translate(0, height);
-        ctx.rotate(( 270 * Math.PI) / 180);
+        ctx.rotate((270 * Math.PI) / 180);
         break;
     }
 
@@ -432,11 +432,19 @@ const getNoteInfo = (annotation, dateFormat, language) => {
   }
 
   info.className = 'note__info';
-  info.innerHTML = `
-    ${i18n.t('option.printInfo.author')}: ${core.getDisplayAuthor(annotation) || ''} &nbsp;&nbsp;
-    ${i18n.t('option.printInfo.subject')}: ${annotation.Subject} &nbsp;&nbsp;
-    ${i18n.t('option.printInfo.date')}: ${date}
-  `;
+  if (annotation.Subject === '' || annotation.Subject === null || annotation.Subject === undefined) {
+    info.innerHTML = `
+      ${i18n.t('option.printInfo.author')}: ${core.getDisplayAuthor(annotation['Author']) || ''} &nbsp;&nbsp;
+      ${i18n.t('option.printInfo.date')}: ${date}
+    `;
+  } else {
+    info.innerHTML = `
+      ${i18n.t('option.printInfo.author')}: ${core.getDisplayAuthor(annotation['Author']) || ''} &nbsp;&nbsp;
+      ${i18n.t('option.printInfo.subject')}: ${annotation.Subject} &nbsp;&nbsp;
+      ${i18n.t('option.printInfo.date')}: ${date}
+    `;
+  }
+
   return info;
 };
 

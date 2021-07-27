@@ -1,9 +1,9 @@
 /**
- * https://www.pdftron.com/api/web/CoreControls.DocumentViewer.html#zoomToMouse__anchor
+ * https://www.pdftron.com/api/web/Core.DocumentViewer.html#zoomToMouse__anchor
  * @fires fitModeUpdated on DocumentViewer
- * @see https://www.pdftron.com/api/web/CoreControls.DocumentViewer.html#event:fitModeUpdated__anchor
+ * @see https://www.pdftron.com/api/web/Core.DocumentViewer.html#event:fitModeUpdated__anchor
  * @fires zoomUpdated on DocumentViewer
- * @see https://www.pdftron.com/api/web/CoreControls.DocumentViewer.html#event:zoomUpdated__anchor
+ * @see https://www.pdftron.com/api/web/Core.DocumentViewer.html#event:zoomUpdated__anchor
  */
 export default zoomFactor => {
   // left panel width when it's not closed
@@ -15,5 +15,5 @@ export default zoomFactor => {
   const headerToolsHeight = document.querySelector('[data-element=toolsHeader]')?.offsetHeight || 0;
   const yOffset = headerHeight + headerToolsHeight;
 
-  window.docViewer.zoomToMouse(zoomFactor, xOffset, yOffset);
+  window.documentViewer.zoomToMouse(zoomFactor, xOffset, yOffset);
 };

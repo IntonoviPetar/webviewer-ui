@@ -51,6 +51,7 @@ const Button = props => {
     isActive,
     mediaQueryClassName,
     img,
+    tabIndex,
     label,
     color,
     dataElement,
@@ -61,8 +62,11 @@ const Button = props => {
     style,
     ariaLabel,
     role,
+    strokeColor,
     fillColor,
     hideTooltipShortcut,
+    iconClassName,
+    forceTooltipPosition
   } = { ...props, ...customOverrides };
   const [t] = useTranslation();
 
@@ -100,6 +104,7 @@ const Button = props => {
       onDoubleClick={actuallyDisabled ? NOOP : onDoubleClick}
       aria-label={aLabel}
       role={role}
+      tabIndex={tabIndex}
       aria-keyshortcuts={ariaKeyshortcuts}
     >
       {isGlyph &&
@@ -108,6 +113,8 @@ const Button = props => {
           glyph={imgToShow}
           color={color}
           fillColor={fillColor}
+          strokeColor={strokeColor}
+          className={iconClassName}
         />}
       {imgToShow && !isGlyph && <img src={imgToShow} />}
       {label && <span>{t(label)}</span>}
@@ -115,7 +122,12 @@ const Button = props => {
   );
 
   return removeElement ? null : shouldRenderTooltip ? (
-    <Tooltip content={title} hideShortcut={hideTooltipShortcut || actuallyDisabled}>{children}</Tooltip>
+    <Tooltip
+      content={title}
+      hideShortcut={hideTooltipShortcut || actuallyDisabled}
+      forcePosition={forceTooltipPosition}>
+      {children}
+    </Tooltip>
   ) : (
     children
   );

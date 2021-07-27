@@ -1,8 +1,9 @@
 import { hot } from 'react-hot-loader/root';
 import React, { useEffect } from 'react';
-import { useStore, useDispatch } from 'react-redux';
+import classNames from 'classnames';
+import { useStore, useDispatch, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
-
+import selectors from 'selectors';
 import Accessibility from 'components/Accessibility';
 import Header from 'components/Header';
 import ToolsHeader from 'components/Header/ToolsHeader';
@@ -37,18 +38,20 @@ import FontHandler from 'components/FontHandler';
 import ZoomOverlay from 'components/ZoomOverlay';
 import CreateStampModal from 'components/CreateStampModal';
 import CustomModal from 'components/CustomModal';
+import Model3DModal from 'components/Model3DModal';
+import FormFieldEditPopup from 'components/FormFieldEditPopup';
 import ColorPickerModal from 'components/ColorPickerModal';
 
 import core from 'core';
-import defineReaderControlAPIs from 'src/apis';
+import defineWebViewerInstanceUIAPIs from 'src/apis';
 import loadDocument from 'helpers/loadDocument';
 import getHashParams from 'helpers/getHashParams';
 import fireEvent from 'helpers/fireEvent';
+import Events from 'constants/events';
 
 import actions from 'actions';
 
 import './App.scss';
-
 
 // TODO: Use constants
 const tabletBreakpoint = window.matchMedia('(min-width: 641px) and (max-width: 900px)');
@@ -62,9 +65,13 @@ const App = ({ removeEventHandlers }) => {
   const dispatch = useDispatch();
   let timeoutReturn;
 
+  const [isInDesktopOnlyMode] = useSelector(state => [
+    selectors.isInDesktopOnlyMode(state)
+  ]);
+
   useEffect(() => {
-    defineReaderControlAPIs(store);
-    fireEvent('viewerLoaded');
+    defineWebViewerInstanceUIAPIs(store);
+    fireEvent(Events.VIEWER_LOADED);
 
     function loadInitialDocument() {
       const doesAutoLoad = getHashParams('auto_load', true);
@@ -86,14 +93,14 @@ const App = ({ removeEventHandlers }) => {
     function loadDocumentAndCleanup() {
       loadInitialDocument();
       window.removeEventListener('message', messageHandler);
-      clearTimeout(timeoutReturn)
+      clearTimeout(timeoutReturn);
     }
 
     function messageHandler(event) {
       if (event.isTrusted &&
         typeof event.data === 'object' &&
         event.data.type === 'viewerLoaded') {
-          loadDocumentAndCleanup();
+        loadDocumentAndCleanup();
       }
     }
 
@@ -125,7 +132,7 @@ const App = ({ removeEventHandlers }) => {
 
   return (
     <React.Fragment>
-      <div className="App">
+      <div className={classNames({ "App": true, 'is-in-desktop-only-mode': isInDesktopOnlyMode })}>
         <Accessibility />
 
         <Header />
@@ -152,6 +159,7 @@ const App = ({ removeEventHandlers }) => {
         <AnnotationContentOverlay />
 
         <AnnotationPopup />
+        <FormFieldEditPopup />
         <TextPopup />
         <ContextMenuPopup />
         <RichTextPopup />
@@ -168,6 +176,7 @@ const App = ({ removeEventHandlers }) => {
         <EditTextModal />
         <FilterAnnotModal />
         <CustomModal />
+        <Model3DModal />
         <ColorPickerModal />
         {core.isFullPDFEnabled() && <SignatureValidationModal />}
       </div>

@@ -42,7 +42,6 @@ const VirtualizedList = React.forwardRef(
         listRef.current?.scrollToRow(selectedIndex);
       }
     }, [selectedIndex]);
-  
     useEffect(() => {
       cache.clearAll();
       listRef?.current?.measureAllRows();
@@ -89,7 +88,7 @@ const VirtualizedList = React.forwardRef(
           parent={parent}
           rowIndex={index}
         >
-          {({ measure }) => (
+        {({ measure }) => (    
           <div style={{ ...style, paddingRight: '12px' }}>
             {children(notes, index, () => {
               _resize(index);

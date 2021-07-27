@@ -22,7 +22,7 @@ class StylePopup extends React.PureComponent {
   static propTypes = {
     style: PropTypes.object.isRequired,
     onStyleChange: PropTypes.func.isRequired,
-    isFreeText: PropTypes.bool.isRequired,
+    isFreeText: PropTypes.bool,
     colorMapKey: PropTypes.string.isRequired,
     currentPalette: PropTypes.oneOf(['TextColor', 'StrokeColor', 'FillColor']),
     isColorPaletteDisabled: PropTypes.bool,
@@ -121,8 +121,6 @@ class StylePopup extends React.PureComponent {
       return <Slider {...props} key={key} onStyleChange={onStyleChange} onSliderChange={onSliderChange}/>;
     });
 
-    // return null;
-
     return (
       <React.Fragment>
         {sliderComponents.length > 0 && (
@@ -178,7 +176,7 @@ class StylePopup extends React.PureComponent {
               color={style[currentPalette]}
               property={currentPalette}
               onStyleChange={onStyleChange}
-              enableEdit={true}
+              enableEdit
             />
           </React.Fragment>
         )}
@@ -193,7 +191,7 @@ class StylePopup extends React.PureComponent {
             />
           </React.Fragment>
         )}
-        {!isStyleOptionDisabled && colorMapKey === 'rectangle' && <StyleOption onStyleChange={onStyleChange} borderStyle={Style}/>}
+        {!isStyleOptionDisabled && colorMapKey === 'rectangle' && <StyleOption onStyleChange={onStyleChange} borderStyle={Style} />}
       </div>
     );
   }

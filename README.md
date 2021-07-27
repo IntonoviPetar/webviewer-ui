@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # WebViewer UI - v7.3
+=======
+# WebViewer UI - v8.0
+>>>>>>> 9eab00204e6ceafabded197e782c0cad922489ef
 
 WebViewer UI sits on top of [WebViewer](https://www.pdftron.com/webviewer), a powerful JavaScript-based PDF Library that's part of the [PDFTron PDF SDK](https://www.pdftron.com). Built in React, WebViewer UI provides a slick out-of-the-box responsive UI that interacts with the core library to view, annotate and manipulate PDFs that can be embedded into any web project.
 

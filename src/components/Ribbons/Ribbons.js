@@ -7,7 +7,6 @@ import actions from 'actions';
 import selectors from 'selectors';
 import { useTranslation } from 'react-i18next';
 import DataElementWrapper from 'components/DataElementWrapper';
-import useWidgetEditing from 'hooks/useWidgetEditing';
 import core from 'core';
 
 import Measure from 'react-measure';
@@ -22,7 +21,6 @@ const Ribbons = () => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [hasEnoughSpace, setHasEnoughSpace] = useState(false);
   const [hasEnoughCenteredSpace, setHasEnoughCenteredSpace] = useState(false);
-  const isEditingWidgets = useWidgetEditing();
   const ribbonsRef = useRef();
   const containerRef = useRef();
   const dispatch = useDispatch();
@@ -35,16 +33,33 @@ const Ribbons = () => {
   // which is an action button that does not have an active background
   const shouldPickTool = toolbarGroup => toolbarGroup !== 'toolbarGroup-Edit';
 
+  const toggleFormFieldCreationMode = toolGroup => {
+    const formFieldCreationManager = core.getFormFieldCreationManager();
+    if (toolGroup === 'toolbarGroup-Forms') {
+      if (!formFieldCreationManager.isInFormFieldCreationMode()) {
+        formFieldCreationManager.startFormFieldCreationMode();
+      }
+    } else if (formFieldCreationManager.isInFormFieldCreationMode()) {
+      formFieldCreationManager.endFormFieldCreationMode();
+    }
+  };
+
+  useEffect(() => {
+    // When we initialize the Viewer we don't want to start off in the Forms tab as
+    // this may confuse users, since in Forms creation mode regular annotations are hidden.
+    // If for some reason we are in this mode on init, we default to switching to the Annotate tab
+    if (currentToolbarGroup === 'toolbarGroup-Forms') {
+      setToolbarGroup('toolbarGroup-Annotate', shouldPickTool('toolbarGroup-Annotate'));
+    }
+  }, [])
+
   useEffect(() => {
     if (ribbonsRef?.current && containerRef?.current) {
-      // const ribbonsRight = ribbonsRef.current.getBoundingClientRect().right;
       const ribbonsWidth = ribbonsRef.current.getBoundingClientRect().width + 4;
-      const containerLeft = containerRef.current.getBoundingClientRect().left;
       const containerWidth = containerRef.current.getBoundingClientRect().width;
-      const ribbonsRight = ((window.innerWidth - ribbonsWidth) / 2) + ribbonsWidth;
-      const remainingSpace = ribbonsRight - containerLeft;
+      const remainingSpace = (window.innerWidth - containerWidth) / 2;
 
-      if (remainingSpace - ribbonsWidth > 0) {
+      if (ribbonsWidth < remainingSpace) {
         setHasEnoughSpace(true);
       } else {
         setHasEnoughSpace(false);
@@ -94,65 +109,47 @@ const Ribbons = () => {
                   'is-hidden': !(hasEnoughSpace || hasEnoughCenteredSpace),
                 })}
               >
-                {isEditingWidgets ? (
-                  <ExitWidgetEditingButton containerWidth={containerWidth} />
-                ) : (
-                  toolbarGroups.map(key => (
-                    <button
-                      key={key}
-                      data-element={`${key}`}
-                      className={classNames({
-                        'ribbon-group': true,
-                        'active': key === currentToolbarGroup,
-                      })}
-                      onClick={() => {
-                        setToolbarGroup(key, shouldPickTool(key));
-                      }}
-                    >
-                      {t(`option.toolbarGroup.${key}`)}
-                    </button>
-                  ))
-                )}
+                {toolbarGroups.map(toolbarGroup => (
+                  <button
+                    key={toolbarGroup}
+                    data-element={`${toolbarGroup}`}
+                    className={classNames({
+                      'ribbon-group': true,
+                      'active': toolbarGroup === currentToolbarGroup,
+                    })}
+                    onClick={() => {
+                      toggleFormFieldCreationMode(toolbarGroup);
+                      setToolbarGroup(toolbarGroup, shouldPickTool(toolbarGroup));
+                    }}
+                  >
+                    {t(`option.toolbarGroup.${toolbarGroup}`)}
+                  </button>
+                ))
+                }
               </div>
             )}
           </Measure>
           <div
             className={classNames({
               'ribbons': true,
-              'is-hidden': hasEnoughCenteredSpace,
+              'is-hidden': (hasEnoughSpace || hasEnoughCenteredSpace),
             })}
           >
-            {isEditingWidgets ? (
-              <ExitWidgetEditingButton containerWidth={containerWidth} />
-            ) : (
-              <Dropdown
-                dataElement="ribbonsDropdown"
-                items={toolbarGroups}
-                translationPrefix="option.toolbarGroup"
-                currentSelectionKey={currentToolbarGroup}
-                onClickItem={toolbarGroup => {
-                  setToolbarGroup(toolbarGroup, shouldPickTool(toolbarGroup));
-                }}
-              />
-            )}
+            <Dropdown
+              dataElement="ribbonsDropdown"
+              items={toolbarGroups}
+              translationPrefix="option.toolbarGroup"
+              currentSelectionKey={currentToolbarGroup}
+              onClickItem={toolbarGroup => {
+                toggleFormFieldCreationMode(toolbarGroup);
+                setToolbarGroup(toolbarGroup, shouldPickTool(toolbarGroup));
+              }}
+            />
           </div>
         </DataElementWrapper>
       )}
     </Measure>
   );
 };
-
-function ExitWidgetEditingButton({ containerWidth }) {
-  return (
-    <ActionButton
-      dataElement="exitFormEditingButton"
-      label={containerWidth < 150 ? 'action.exit' : 'action.exitFormEditing'}
-      onClick={() => {
-        const widgetEditingManager = core.getWidgetEditingManager();
-        widgetEditingManager.endEditing();
-      }}
-    />
-  );
-}
 
 export default Ribbons;
